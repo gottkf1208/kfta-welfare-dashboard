@@ -326,6 +326,11 @@ function confetti(s){var c=document.createElement('canvas');c.width=1920;c.heigh
   (function fr(now){var t=now-t0;g.clearRect(0,0,1920,1080);P.forEach(function(p){p.vy+=.5;p.vx*=.992;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;g.save();g.translate(p.x,p.y);g.rotate(p.r);g.fillStyle=p.c;g.globalAlpha=Math.max(0,1-t/3800);g.fillRect(-p.w/2,-p.h/2,p.w,p.h);g.restore()});
     if(t<3800&&c.isConnected&&s.classList.contains('active'))requestAnimationFrame(fr);else c.remove()})(t0)}
 
+/* ---- 넘기기 보강: 화면 클릭·Enter·위아래 키로도 넘어가고, 키 입력이 아이콘 틀에 갇히지 않게 ---- */
+document.addEventListener('click',function(e){if(!window.Deck||Deck.isFlow())return;var t=e.target;if(!t.closest||!t.closest('.slide')||t.closest('button,a,input,textarea,select,video,[data-goto],[data-next],[data-prev]'))return;Deck.next()});
+addEventListener('keydown',function(e){if(!window.Deck||Deck.isFlow()||e.metaKey||e.ctrlKey||e.altKey)return;var k=e.key;if(k==='Enter'||k==='ArrowDown'){e.preventDefault();Deck.next()}else if(k==='ArrowUp'||k==='Backspace'){e.preventDefault();Deck.prev()}});
+setInterval(function(){var a=document.activeElement;if(a&&a.tagName==='IFRAME'){a.blur();window.focus()}},400);
+addEventListener('pointerdown',function(){window.focus()},true);
 /* ---- 장면마다 ---- */
 slides.forEach(function(s){split;[].forEach.call(s.querySelectorAll('.kin'),split);
   s.addEventListener('deck:enter',function(){
