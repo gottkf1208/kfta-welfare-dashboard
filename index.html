@@ -229,7 +229,11 @@ button.kpi:hover .kpi-label::after { color: var(--navy-600); transform: translat
 .tip b { display: block; color: var(--navy-600); font-weight: 600; margin-bottom: 1px; }
 
 /* ── 06 회의 발표 ─────────────────────────────── */
-.mt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 14px; margin-bottom: 14px; }
+.mt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 14px; }
+.mt-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 4px; }
+.mt-top .h2 { margin: 0; }
+.card.soft .ta { background: #fff; }
+#meeting .fold { margin-top: 18px; }
 .mt-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .mt-head h3 { margin: 0; }
 .ta { display: block; width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 13.5px; line-height: 1.7; color: var(--ink); background: var(--cell); resize: vertical; }
@@ -248,7 +252,7 @@ button.kpi:hover .kpi-label::after { color: var(--navy-600); transform: translat
 #recAudio:not([hidden]) { display: block; width: 100%; margin-top: 10px; }
 .deck-frame { position: relative; border-radius: 14px; overflow: hidden; background: #040917; aspect-ratio: 16 / 10.4; }
 .deck-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.deck-frame + .note { margin: 12px 2px 0; }
+.deck-frame + .note { margin: 10px 2px 0; }
 
 /* ── 푸터 ─────────────────────────────── */
 .foot { border-top: 1px solid var(--line); margin-top: 36px; padding: 18px 0 30px; font-size: 12px; color: var(--faint); display: flex; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
@@ -426,42 +430,41 @@ button.kpi:hover .kpi-label::after { color: var(--navy-600); transform: translat
   <!-- 07 회의 발표 -->
   <section class="panel" id="meeting" role="tabpanel" aria-labelledby="tab-meeting" hidden>
     <div class="label">회의 발표</div>
-    <h2 class="h2">회의 내용을 모션 PPT로</h2>
-    <p class="sub">녹음하면서 받아쓰고, 정리한 글을 넣으면 바로 발표 화면이 됩니다.</p>
-    <div class="mt-grid">
-      <div class="card">
-        <div class="mt-head"><span class="fold-no">01</span><h3>실시간 녹음</h3><span class="chip" id="recState">대기 중</span></div>
-        <div class="rec-row">
-          <button class="rec-btn" id="recBtn" type="button" aria-pressed="false"><i aria-hidden="true"></i><span>녹음 시작</span></button>
-          <span class="rec-time" id="recTime" aria-live="off">00:00</span>
+    <div class="mt-top"><h2 class="h2" id="deckName">회의 발표</h2><span class="chip" id="deckInfo"></span><span class="push"></span><button class="ghost" id="deckFull" type="button">전체 화면</button><button class="ghost" id="deckSave" type="button">HTML로 저장</button></div>
+    <p class="sub">화면을 누르거나 → · 스페이스로 넘깁니다. L 목록, F 전체화면, P 펜.</p>
+    <div class="deck-frame"><iframe id="deck" title="모션 PPT 발표" allow="fullscreen"></iframe></div>
+    <p class="note">발표 장면은 AI 모션랩의 ‘미니멀 키노트’입니다.</p>
+    <details class="fold" open>
+      <summary><span class="fold-title">회의 내용 넣기 · 바꾸기</span><span class="chip" id="mtState"></span><span class="chev" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <div class="fold-body"><div class="mt-grid">
+        <div class="card soft">
+          <div class="mt-head"><span class="fold-no">01</span><h3>실시간 녹음</h3><span class="chip" id="recState">대기 중</span></div>
+          <div class="rec-row">
+            <button class="rec-btn" id="recBtn" type="button" aria-pressed="false"><i aria-hidden="true"></i><span>녹음 시작</span></button>
+            <span class="rec-time" id="recTime" aria-live="off">00:00</span>
+          </div>
+          <p class="note" id="recNote">녹음 파일은 이 브라우저에만 남습니다. 실시간 받아쓰기는 크롬·엣지의 음성 인식을 쓰고, 이때 음성이 브라우저 제공사 서버로 보내집니다. 참석자에게 녹음을 먼저 알려 주세요.</p>
+          <textarea class="ta" id="recText" rows="7" placeholder="녹음하는 동안 받아쓴 말이 여기에 쌓입니다. 직접 적거나 붙여 넣어도 됩니다." aria-label="받아쓴 글"></textarea>
+          <p class="rec-interim" id="recInterim" aria-hidden="true"></p>
+          <audio id="recAudio" controls hidden></audio>
+          <div class="mt-acts">
+            <a class="ghost" id="recDown" hidden>녹음 파일 받기</a>
+            <button class="ghost" id="recTxt" type="button">받아쓴 글 받기</button>
+            <button class="ghost" id="recPrompt" type="button">AI 정리 요청문 복사</button>
+          </div>
         </div>
-        <p class="note" id="recNote">녹음 파일은 이 브라우저에만 남습니다. 실시간 받아쓰기는 크롬·엣지의 음성 인식을 쓰고, 이때 음성이 브라우저 제공사 서버로 보내집니다. 참석자에게 녹음을 먼저 알려 주세요.</p>
-        <textarea class="ta" id="recText" rows="7" placeholder="녹음하는 동안 받아쓴 말이 여기에 쌓입니다. 직접 적거나 붙여 넣어도 됩니다." aria-label="받아쓴 글"></textarea>
-        <p class="rec-interim" id="recInterim" aria-hidden="true"></p>
-        <audio id="recAudio" controls hidden></audio>
-        <div class="mt-acts">
-          <a class="ghost" id="recDown" hidden>녹음 파일 받기</a>
-          <button class="ghost" id="recTxt" type="button">받아쓴 글 받기</button>
-          <button class="ghost" id="recPrompt" type="button">AI 정리 요청문 복사</button>
+        <div class="card soft">
+          <div class="mt-head"><span class="fold-no">02</span><h3>회의 정리</h3></div>
+          <p class="note">‘# 제목’ 아래에 ‘## 안건 · 논의 · 숫자 · 비교 · 한마디 · 할 일 · 마무리’로 나눠 적으면 장면이 정해집니다.</p>
+          <textarea class="ta" id="mtNotes" rows="13" spellcheck="false" aria-label="회의 정리"></textarea>
+          <div class="mt-acts">
+            <button class="ghost" id="mtMeeting" type="button">회의 요약 넣기</button>
+            <button class="ghost" id="mtBlank" type="button">빈 틀 넣기</button>
+            <button class="cta" id="mtBuild" type="button">모션 PPT로 바꾸기</button>
+          </div>
         </div>
-      </div>
-      <div class="card">
-        <div class="mt-head"><span class="fold-no">02</span><h3>회의 정리</h3><span class="chip" id="mtState"></span></div>
-        <p class="note">‘# 제목’ 아래에 ‘## 안건’, ‘## 논의: 소제목’, ‘## 숫자’, ‘## 비교’, ‘## 한마디’, ‘## 할 일’, ‘## 마무리’로 나눠 적으면 장면이 정해집니다.</p>
-        <textarea class="ta" id="mtNotes" rows="13" spellcheck="false" aria-label="회의 정리"></textarea>
-        <div class="mt-acts">
-          <button class="ghost" id="mtMeeting" type="button">회의 요약 넣기</button>
-          <button class="ghost" id="mtSample" type="button">예시 넣기</button>
-          <button class="ghost" id="mtBlank" type="button">빈 틀 넣기</button>
-          <button class="cta" id="mtBuild" type="button">모션 PPT로 바꾸기</button>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="mt-head"><span class="fold-no">03</span><h3>발표</h3><span class="chip" id="deckInfo"></span><span class="push"></span><button class="ghost" id="deckFull" type="button">전체 화면</button><button class="ghost" id="deckSave" type="button">HTML로 저장</button></div>
-      <div class="deck-frame"><iframe id="deck" title="모션 PPT 발표" allow="fullscreen"></iframe></div>
-      <p class="note">화면을 누르거나 → · 스페이스로 다음 효과, L 목록, F 전체화면, P 펜. 발표 장면은 AI 모션랩의 ‘미니멀 키노트’입니다.</p>
-    </div>
+      </div></div>
+    </details>
   </section>
 
   <footer class="foot"><span>복지 수치는 한국교총 본부와 17개 시·도교총의 공개 자료를 대조해 정리했고, 미확인 칸은 0원으로 집계하지 않았습니다. 연수원 탭과 회의 발표는 11월 20일 회의 보고를 자동 받아쓰기로 정리한 것입니다.</span><span id="footAsOf"></span></footer>
@@ -1767,7 +1770,7 @@ renderEv();
 
 /* ── 06 회의 발표: 녹음 → 정리 → 모션 PPT ─────────────────────────────── */
 const KIT = JSON.parse($('#pptKit').textContent);
-const MEETING = {"label": "11월 20일 회의 · 전반", "notes": "# 11월 20일 회의\\n전반 요약\n머리글: KFTA MEETING\n일시: 2026. 11. 20\n기록: 자동 받아쓰기 23분 기준\n한 줄: 회원 복지 제휴와 연수원 사업 보고\n\n## 안건\n- 회원 복지 제휴 현황과 방향\n- 연구대회 개편\n- 공모·협력 연수\n- 원격연수와 연수원 운영 구조\n- 한국교총 AI 아카데미\n\n## 논의: 회원 복지 제휴\n- 시·도 사례: 호텔 객실 프로모션, 장례식장 할인\n- 통신·카드 혜택: 비용 분담 구조라 맞비교는 어려움\n- 방향: 가입 유인이 될 대표 복지, 2030 여성 등 집중 영역 검토\n- 키즈카페: 전국 단위 업체에 제휴 타진, 아직 회신 없음\n\n## 논의: 연구대회 개편\n- 현장교육연구대회: 선택과 집중으로 활성화\n- 분과 조정: 출품 저조 분과 폐지, 미래교육(AI) 신설\n- 교육자료전: 내년까지 진행 후 폐지 방향\n- 초등교육연구대회: 표절·출품 감소로 폐지 방향\n\n## 논의: 개편 배경과 대안\n- 예산: 실물 심사에 큰 비용, 자료전 비중이 가장 큼\n- 활용: 입상작이 학교 현장에서 쓰이는 경우가 드묾\n- 추세: 출품 수가 해마다 뚜렷이 감소\n- 대안: 웹 기반 새 공모전을 기획해 활성화\n\n## 숫자: 연구대회와 공모연수\n- 140 | 편 | 현장교육연구대회 본선\n- 34 | 편 | 공모연수 신청\n- 9 | 편 | 공모연수 선정\n\n## 논의: 공모·협력 연수\n- 공모연수: 선정한 9개 과정을 1월에 개설\n- 개설 기준: 과정별 20명 이상 신청\n- 경제연수: 한국경제인협회와 확대 협의, 권역별 진행 예정\n- 위탁·협력: 청소년상담복지개발원, 삼성복지재단\n\n## 숫자: 원격연수 사제동행\n- 217 | 개 | 운영 과정\n- 18 | 개 | 2026년 신규 과정\n- 30 | 차시 | AI 아카데미 무료 과정\n\n## 논의: 연수원 운영 구조\n- 특별회계: 연수원 수입으로 콘텐츠 개발과 운영\n- 수입원: 원격연수의 교육청 위탁과 개인 수강\n- 개발 부담: 콘텐츠 한 편마다 큰 개발비\n- 전출: 남는 수입은 일반회계로\n\n## 논의: 한국교총 AI 아카데미\n- 재원: 마이크로소프트 지원으로 AI 연수 콘텐츠 개발\n- 구성: 6차시 5개 과정, 30차시를 회원에게 무료로\n- 기능: AI 탐색, 연수, 커뮤니티, 자료 공유\n- 인증: MS 인증 부여, 대구교육청 인증제 연수와 연계\n\n## 할 일: 앞으로의 일정\n- 1월 | 공모연수 9개 과정 개설\n- 내년 | 현장교육연구대회에 미래교육 분과 적용\n- 내년 방학 | 경제연수 권역별 진행\n- 내년까지 | 교육자료전 진행\n- 예정 | AI 아카데미 교사 지원단 선정\n\n## 마무리: 후반 회의로\\n이어집니다\n- 기준 | 자동 받아쓰기 23분\n- 확인 | 숫자와 고유명사는 원자료로"};   /* 회의 요약(정리 글). 새 회의록이 나오면 이 글만 바꾸면 됩니다 */
+const MEETING = {"label": "11월 20일 회의 · 전반", "notes": "# 11월 20일 회의\\n전반 요약\n머리글: KFTA MEETING\n일시: 2026. 11. 20\n기록: 자동 받아쓰기 23분 기준\n한 줄: 회원 복지 제휴와 연수원 사업 보고\n\n## 안건\n- 회원 복지 제휴\n- 연구대회 개편\n- 연수 운영\n- 한국교총 AI 아카데미\n- 앞으로의 일정\n\n## 비교: 복지 제휴, 지금과 앞으로\n- 지금 | 앞으로\n- 시·도별 호텔·장례 할인 제휴 | 가입을 이끌 대표 복지 발굴\n- 통신·카드사 혜택과 맞비교는 어려움 | 2030 여성 등 집중 영역 검토\n- 키즈카페 제휴 타진, 회신 없음 | 홍보가 필요한 기업과 제휴 모색\n\n## 비교: 연구대회, 키우는 것과 줄이는 것\n- 키운다 | 줄인다\n- 현장교육연구대회 (본선 140편) | 교육자료전은 내년까지 진행\n- 미래교육(AI) 분과 신설 | 초등교육연구대회 폐지 방향\n- 웹 기반 새 공모전 기획 | 출품 저조 분과 폐지\n\n## 논의: 왜 바꾸나\n- 예산: 실물 심사에 큰 비용\n- 활용: 입상작이 현장에서 잘 안 쓰임\n- 추세: 출품 수가 해마다 감소\n\n## 숫자: 숫자로 보는 연수\n- 217 | 개 | 원격연수 운영 과정\n- 18 | 개 | 2026년 신규 과정\n- 9 | 편 | 공모연수 선정 (신청 34편)\n\n## 논의: 연수 운영\n- 공모연수: 선정 9개 과정, 1월 개설\n- 경제연수: 한국경제인협회와 확대, 권역별 진행\n- 위탁·협력: 청소년상담복지개발원, 삼성복지재단\n\n## 논의: 한국교총 AI 아카데미\n- 재원: 마이크로소프트 지원\n- 구성: 30차시, 회원 무료\n- 기능: AI 탐색 · 연수 · 커뮤니티\n- 인증: 이수 단계별 MS 인증\n\n## 할 일: 앞으로의 일정\n- 1월 | 공모연수 9개 과정 개설\n- 내년 | 미래교육 분과 적용\n- 내년 방학 | 경제연수 권역별 진행\n- 내년까지 | 교육자료전 진행\n- 예정 | AI 아카데미 지원단 선정\n\n## 마무리: 후반 회의로\\n이어집니다\n- 기준 | 자동 받아쓰기 23분\n- 확인 | 숫자와 이름은 원자료로"};   /* 회의 요약(정리 글). 새 회의록이 나오면 이 글만 바꾸면 됩니다 */
 const pad2 = n => String(n).padStart(2, '0');
 const saved = { get: k => { try { return localStorage.getItem('kfta.meeting.' + k) || ''; } catch (e) { return ''; } }, set: (k, v) => { try { localStorage.setItem('kfta.meeting.' + k, v); } catch (e) {} } };
 const stamp = () => { const d = new Date(); return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '-' + pad2(d.getHours()) + pad2(d.getMinutes()); };
@@ -1843,14 +1846,13 @@ let deckFile = '', deckTitle = '';
 function buildDeck() {
   const doc = parseNotes($('#mtNotes').value), slides = toSlides(doc);
   deckTitle = (doc.title || '회의 발표').replace(/\\n/g, ' '); deckFile = deckHtml(deckTitle, slides);
-  $('#deck').srcdoc = deckFile; $('#deckInfo').textContent = slides.length + '장';
+  $('#deck').srcdoc = deckFile; $('#deckInfo').textContent = slides.length + '장'; $('#deckName').textContent = deckTitle;
 }
 const setNotes = (text, state) => { $('#mtNotes').value = text; saved.set('notes', ''); $('#mtState').textContent = state; $('#mtState').hidden = !state; };
 $('#mtNotes').addEventListener('input', e => { saved.set('notes', e.target.value); $('#mtState').hidden = true; });
 $('#mtMeeting').addEventListener('click', () => { setNotes(MEETING.notes, MEETING.label); buildDeck(); });
-$('#mtSample').addEventListener('click', () => { setNotes(sampleNotes(), '예시 · 대시보드 요약'); buildDeck(); });
 $('#mtBlank').addEventListener('click', () => { setNotes(BLANK, '빈 틀'); $('#mtNotes').focus(); });
-$('#mtBuild').addEventListener('click', () => { buildDeck(); $('#deck').scrollIntoView({ block: 'center', behavior: reduceMotion.matches ? 'auto' : 'smooth' }); });
+$('#mtBuild').addEventListener('click', () => { buildDeck(); $('#deckName').scrollIntoView({ block: 'start', behavior: reduceMotion.matches ? 'auto' : 'smooth' }); });
 $('#deckFull').addEventListener('click', () => { const f = $('#deck'); (f.requestFullscreen || f.webkitRequestFullscreen || (() => {})).call(f); f.focus(); });
 $('#deckSave').addEventListener('click', () => { if (deckFile) download(new Blob([deckFile], { type: 'text/html' }), deckTitle.replace(/[\\/:*?"<>|]/g, '_') + '.html'); });
 window.meetingOpen = () => {
