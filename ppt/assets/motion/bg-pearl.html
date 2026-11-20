@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>펄 광택</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#ecebe7}</style>
+</head>
+<body>
+<!-- 쿼카 모션랩 · 펄 광택 (Pearl Sheen) -->
+<!-- 글꼴: 페이퍼로지 (OFL) · 프리텐다드 (OFL) · 함렛 (OFL) · 눈누(noonnu.cc)의 무료 한글 글꼴 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Noto+Sans+KR:wght@100..900&family=Hahmlet:wght@100..900&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+@font-face{font-family:'Paperlogy';font-style:normal;font-weight:100;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-1Thin.woff2) format('woff2')}@font-face{font-family:'Paperlogy';font-style:normal;font-weight:200;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-2ExtraLight.woff2) format('woff2')}@font-face{font-family:'Paperlogy';font-style:normal;font-weight:300;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-3Light.woff2) format('woff2')}@font-face{font-family:'Paperlogy';font-style:normal;font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-4Regular.woff2) format('woff2')}@font-face{font-family:'Paperlogy';font-style:normal;font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2) format('woff2')}@font-face{font-family:'Paperlogy';font-style:normal;font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2) format('woff2')}@font-face{font-family:'Paperlogy';font-style:normal;font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2) format('woff2')}@font-face{font-family:'Paperlogy';font-style:normal;font-weight:800;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-8ExtraBold.woff2) format('woff2')}@font-face{font-family:'Paperlogy';font-style:normal;font-weight:900;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-9Black.woff2) format('woff2')}
+</style>
+<div id="qm-lp-pearl-sheen" style="width:100%;max-width:calc(100vh * 1.7778)"></div>
+<script>
+(function () {
+  // ① 설정: 여기만 고치면 됩니다
+  const CONFIG = {
+    speed: 1,          // 속도 (1 = 기본, 2 = 두 배)
+    bg: '#ecebe7',     // 배경색 ('transparent'로 바꾸면 투명)
+    colors: ['#ffffff', '#d5dde9', '#e7e1d8', '#e5d6db', '#c9cfdb', '#1f3460', '#6e1a2f', '#17181c'],   // 색 8개: 밝은 색 → 진한 색 ([5] 포인트 색, [7] 글자색)
+    live: true,        // 실제 마우스·스크롤에 반응 (false면 연출대로만 움직임)
+    ratio: '16 / 9'    // 화면 비율 (가로 / 세로)
+  };
+
+  // ② 모션: 펄 광택
+  function lpKit(api) {
+    const clamp = x => Math.max(0, Math.min(1, x));
+    const lp = {
+      face: name => `'${name}','Pretendard Variable','Pretendard',sans-serif`,   // 한글 글꼴 하나 + 대체로 프리텐다드 (한 글줄 안에서 글꼴이 섞이지 않게)
+      clamp: clamp,
+      seg: (t, a, b) => clamp((t - a) / (b - a)),                 // t가 a~b 사이 어디쯤인지 0~1로
+      mix: (a, b, p) => a + (b - a) * p,
+      out: x => 1 - Math.pow(1 - clamp(x), 4),                    // 빠르게 출발해 부드럽게 멈춤
+      expo: x => { x = clamp(x); return x >= 1 ? 1 : 1 - Math.pow(2, -10 * x); },   // 더 급하게 출발해 길게 멈춤
+      into: x => Math.pow(clamp(x), 3),                           // 천천히 출발해 빠르게 빠져나감
+      io: x => { x = clamp(x); return x < 0.5 ? 8 * x * x * x * x : 1 - Math.pow(-2 * x + 2, 4) / 2; },   // 천천히-빠르게-천천히
+      wave: (t, period) => 0.5 - 0.5 * Math.cos(t / period * Math.PI * 2),         // 0 → 1 → 0을 period초마다 되풀이
+      // 연출용 커서 길. keys = [[초, x(0~1), y(0~1), 누름(0 또는 1)], ...] (x·y는 무대 너비·높이에 대한 비율)
+      // 열쇠 사이는 부드럽게 잇고, 첫 열쇠 전 0.3초 동안 나타나며 마지막 열쇠 뒤 0.4초 동안 사라집니다. 누름이 1인 열쇠에서 짧게 누릅니다
+      // 돌려주는 값 { x, y(px), down(0~1), on(0~1) } → 그대로 api.pointer()에 넘기면 됩니다
+      path(t, keys) {
+        const n = keys.length, first = keys[0], end = keys[n - 1];
+        let x = first[1], y = first[2];
+        if (t >= end[0]) { x = end[1]; y = end[2]; }
+        else for (let i = 0; i < n - 1; i++) {
+          const a = keys[i], b = keys[i + 1];
+          if (t >= a[0] && t < b[0]) { const p = lp.io(lp.seg(t, a[0], b[0])); x = lp.mix(a[1], b[1], p); y = lp.mix(a[2], b[2], p); break; }
+        }
+        let down = 0;
+        keys.forEach(k => { if (k[3]) down = Math.max(down, 1 - clamp(Math.abs(t - k[0]) / 0.16)); });
+        const on = Math.min(lp.seg(t, first[0] - 0.3, first[0]), 1 - lp.seg(t, end[0], end[0] + 0.4));
+        return { x: x * api.W, y: y * api.H, down: down, on: on };
+      },
+      // 연출용 커서(화살표). 실제 페이지(CONFIG.live)에서는 저절로 숨습니다. 돌려주는 값 { el, set(p) } — p는 api.pointer()가 돌려준 값
+      cursor(parent, scale) {
+        const s = api.u * 0.042 * (scale || 1), NS = 'http://www.w3.org/2000/svg';
+        const el = document.createElementNS(NS, 'svg'), body = document.createElementNS(NS, 'path');
+        el.setAttribute('viewBox', '0 0 20 24');
+        el.setAttribute('width', s);
+        el.setAttribute('height', s * 1.2);
+        el.style.cssText = `position:absolute;left:0;top:0;overflow:visible;pointer-events:none;z-index:9;transform-origin:0 0;filter:drop-shadow(0 ${s * 0.06}px ${s * 0.12}px rgba(0,0,0,.35));`;
+        body.setAttribute('d', 'M2 1.6 L2 19.2 L6.6 14.9 L9.6 21.6 L12.7 20.2 L9.8 13.7 L16.2 13.7 Z');
+        body.setAttribute('fill', '#ffffff');
+        body.setAttribute('stroke', '#111111');
+        body.setAttribute('stroke-width', '1.3');
+        body.setAttribute('stroke-linejoin', 'round');
+        el.appendChild(body);
+        parent.appendChild(el);
+        return {
+          el: el,
+          set(p) {
+            el.style.opacity = (p.on * p.fake).toFixed(3);
+            el.style.transform = `translate(${p.x - s * 0.1}px,${p.y - s * 0.08}px) scale(${1 - 0.14 * p.down})`;
+          }
+        };
+      },
+      // 네 갈래 별빛 하나 (반짝임). 아주 작게, 은은하게 쓰세요. 돌려주는 값: 요소 (자리·크기·투명도는 style로)
+      glint(parent, px, color) {
+        const NS = 'http://www.w3.org/2000/svg', el = document.createElementNS(NS, 'svg'), star = document.createElementNS(NS, 'path');
+        el.setAttribute('viewBox', '-10 -10 20 20');
+        el.setAttribute('width', px);
+        el.setAttribute('height', px);
+        el.style.cssText = `position:absolute;left:0;top:0;margin:${-px / 2}px 0 0 ${-px / 2}px;overflow:visible;pointer-events:none;`;
+        star.setAttribute('d', 'M0 -10 C0.7 -2.4 2.4 -0.7 10 0 C2.4 0.7 0.7 2.4 0 10 C-0.7 2.4 -2.4 0.7 -10 0 C-2.4 -0.7 -0.7 -2.4 0 -10 Z');
+        star.setAttribute('fill', color || '#ffffff');
+        el.appendChild(star);
+        parent.appendChild(el);
+        return el;
+      },
+      // 빛줄기가 훑고 지나가는 배경 값 (글자·단추 위의 반짝임). p: 지나간 정도 0~1, angle: 기울기(도), width: 빛 폭(%), alpha: 밝기, color: 'r,g,b'
+      sweep(p, angle, width, alpha, color) {
+        const w = width || 14, c = -w + clamp(p) * (100 + 2 * w), rgb = color || '255,255,255';
+        return `linear-gradient(${angle == null ? 105 : angle}deg, rgba(${rgb},0) ${c - w}%, rgba(${rgb},${alpha == null ? 0.55 : alpha}) ${c}%, rgba(${rgb},0) ${c + w}%)`;
+      },
+      // 유리판 느낌 (backdrop-filter 없이): 반투명 면 + 위쪽 빛 테두리 + 부드러운 그림자. dark = 어두운 바탕 위
+      glass(dark) {
+        return dark
+          ? 'background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,.04));box-shadow:inset 0 1px 0 rgba(255,255,255,.38),inset 0 0 0 1px rgba(255,255,255,.12),0 24px 48px -16px rgba(0,0,0,.55);'
+          : 'background:linear-gradient(160deg,rgba(255,255,255,.92),rgba(255,255,255,.62));box-shadow:inset 0 1px 0 #ffffff,inset 0 0 0 1px rgba(255,255,255,.7),0 22px 44px -18px rgba(18,22,36,.35),0 2px 6px rgba(18,22,36,.08);';
+      },
+      // 고운 결(필름 노이즈) 한 겹: 매끈한 그라데이션에 질감을 줘서 고급스럽게. 투명 배경일 때는 만들지 않음(null)
+      grain(parent, alpha) {
+        if (api.clear) return null;
+        const cv = document.createElement('canvas'), g = cv.getContext('2d'), img = g.createImageData(128, 128), r = api.rand(7);
+        cv.width = cv.height = 128;
+        for (let i = 0; i < img.data.length; i += 4) { const v = r() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+        g.putImageData(img, 0, 0);
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:${alpha == null ? 0.06 : alpha};background:url(${cv.toDataURL()}) 0 0 / ${Math.max(64, api.u * 0.16)}px repeat;`;
+        parent.appendChild(el);
+        return el;
+      },
+      // 무대 가득 캔버스 한 장. 돌려주는 값 { cv, g, k } — g는 이미 배율이 걸려 있어 px 그대로 그리면 됩니다
+      canvas(parent) {
+        const cv = document.createElement('canvas'), k = Math.min(2, window.devicePixelRatio || 1, 2600 / Math.max(api.W, api.H));
+        cv.width = Math.round(api.W * k);
+        cv.height = Math.round(api.H * k);
+        cv.style.cssText = `position:absolute;left:0;top:0;width:${api.W}px;height:${api.H}px;`;
+        (parent || api.root).appendChild(cv);
+        const g = cv.getContext('2d');
+        g.setTransform(k, 0, 0, k, 0, 0);
+        return { cv: cv, g: g, k: k };
+      },
+      // 글자를 쪼개 가림막 안에 넣음. by: 'line'(\n 기준) | 'word' | 'char'. 돌려주는 값: 움직일 알맹이 목록
+      split(parent, text, by) {
+        const units = by === 'line' ? String(text).split('\n') : by === 'word' ? String(text).split(/(\s+)/) : Array.from(String(text));
+        const parts = [];
+        units.forEach(unit => {
+          if (!unit) return;
+          if (by !== 'line' && /^\s+$/.test(unit)) { parent.appendChild(document.createTextNode(unit.indexOf('\n') >= 0 ? '\n' : ' ')); return; }
+          const mask = document.createElement('span'), core = document.createElement('span');
+          mask.style.cssText = `display:${by === 'line' ? 'block' : 'inline-block'};overflow:hidden;vertical-align:top;padding:.14em 0;margin:-.14em 0;` + (by === 'line' ? '' : 'white-space:pre;');
+          core.style.cssText = `display:${by === 'line' ? 'block' : 'inline-block'};will-change:transform;`;
+          core.textContent = unit;
+          mask.appendChild(core);
+          parent.appendChild(mask);
+          parts.push(core);
+        });
+        return parts;
+      },
+      // 작은 라벨 (대문자, 자간 넓게)
+      label(parent, text, px, color) {
+        const el = document.createElement('span');
+        el.textContent = text;
+        el.style.cssText = `display:block;font:600 ${px}px/1.2 ${lp.face('Pretendard Variable')};letter-spacing:.14em;text-transform:uppercase;color:${color || api.fg};white-space:nowrap;`;
+        parent.appendChild(el);
+        return el;
+      },
+      // 미리보기용 스크롤 진행 0~1: 한 바퀴(loop초) 안에서 천천히 끝까지 내려갔다가 잠깐 머물고, 마지막에 처음으로 감김 → api.scroll()에 넘기면 됩니다
+      demoScroll(t, loop) {
+        t = ((t % loop) + loop) % loop;
+        return t < loop * 0.82 ? lp.io(lp.seg(t, loop * 0.06, loop * 0.74)) : 1 - lp.io(lp.seg(t, loop * 0.86, loop));
+      }
+    };
+    return lp;
+  }
+
+  function laRGB(color) {
+    return /^#[0-9a-f]{6}$/i.test(color) ? [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16) / 255) : [0, 0, 0];
+  }
+
+  function laAlpha(color, a) {
+    const c = laRGB(color).map(v => Math.round(v * 255));
+    return `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+  }
+
+  function laShader(api, body, scale, loop) {
+    const W = api.W, H = api.H;
+    const k = Math.min(2, window.devicePixelRatio || 1, 2400 / Math.max(W, H)) * (scale || 1);
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(2, Math.round(W * k));
+    cv.height = Math.max(2, Math.round(H * k));
+    cv.style.cssText = `position:absolute;left:0;top:0;width:${W}px;height:${H}px;`;
+    api.root.appendChild(cv);
+    const gl = cv.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false, alpha: true, antialias: false });
+    const stub = { cv: cv, set() {}, image() {}, draw() {}, dispose() {} };
+    if (!gl) return stub;
+    gl.getExtension('OES_standard_derivatives');
+    const head = [
+      '#extension GL_OES_standard_derivatives : enable',
+      '#ifdef GL_FRAGMENT_PRECISION_HIGH',
+      'precision highp float;',
+      '#else',
+      'precision mediump float;',
+      '#endif',
+      'uniform vec2 uRes, uSize;',
+      'uniform float uK, uT, uLoop, uClear;',
+      '#define TAU 6.2831853',
+      'vec2 px() { return vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uK; }',
+      'float hash(vec2 p) { vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }',
+      'float hash3(vec3 p) { p = fract(p * 0.1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }',
+      'float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);',
+      '  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }',
+      'float noise3(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);',
+      '  float a = mix(mix(hash3(i), hash3(i + vec3(1.0, 0.0, 0.0)), f.x), mix(hash3(i + vec3(0.0, 1.0, 0.0)), hash3(i + vec3(1.0, 1.0, 0.0)), f.x), f.y);',
+      '  float b = mix(mix(hash3(i + vec3(0.0, 0.0, 1.0)), hash3(i + vec3(1.0, 0.0, 1.0)), f.x), mix(hash3(i + vec3(0.0, 1.0, 1.0)), hash3(i + vec3(1.0, 1.0, 1.0)), f.x), f.y);',
+      '  return mix(a, b, f.z); }',
+      'vec2 loopv(float r) { float a = TAU * uT / uLoop; return vec2(cos(a), sin(a)) * r; }',
+      'vec4 over(vec4 top, vec4 under) { return top + under * (1.0 - top.a); }',
+      'float dither() { return (hash(gl_FragCoord.xy) - 0.5) / 255.0; }',
+      ''
+    ].join('\n');
+    const make = (type, text) => {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, text);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s));
+      return s;
+    };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, make(gl.VERTEX_SHADER, 'attribute vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }'));
+    gl.attachShader(prog, make(gl.FRAGMENT_SHADER, head + body));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(prog)); return stub; }
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+    const pos = gl.getAttribLocation(prog, 'a');
+    gl.enableVertexAttribArray(pos);
+    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+    const spots = {};
+    const where = name => name in spots ? spots[name] : (spots[name] = gl.getUniformLocation(prog, name));
+    const st = {
+      cv: cv,
+      // uniform 값 넣기: 숫자 하나 또는 [2~4개]
+      set(name, v) {
+        const l = where(name);
+        if (!l) return;
+        if (typeof v === 'number') gl.uniform1f(l, v);
+        else if (v.length === 2) gl.uniform2fv(l, v);
+        else if (v.length === 3) gl.uniform3fv(l, v);
+        else gl.uniform4fv(l, v);
+      },
+      // 캔버스 그림을 셰이더 그림(sampler2D)으로 (색은 미리 곱한 값으로 들어감)
+      image(name, source, unit) {
+        unit = unit || 0;
+        gl.activeTexture(gl.TEXTURE0 + unit);
+        gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER].forEach(p => gl.texParameteri(gl.TEXTURE_2D, p, gl.LINEAR));
+        [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(p => gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE));
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+        const l = where(name);
+        if (l) gl.uniform1i(l, unit);
+      },
+      draw(t) {
+        if (gl.isContextLost()) return;
+        st.set('uT', t);
+        gl.viewport(0, 0, cv.width, cv.height);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      },
+      // 다시 만들기 전에 정리 (엔진이 frame.dispose로 부름)
+      dispose() { const x = gl.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); }
+    };
+    st.set('uRes', [cv.width, cv.height]);
+    st.set('uSize', [W, H]);
+    st.set('uK', cv.width / W);
+    st.set('uLoop', loop || 10);
+    st.set('uClear', api.clear ? 1 : 0);
+    return st;
+  }
+
+  function laHero(api, lp, o) {
+    const W = api.W, H = api.H, u = api.u, tall = H / W > 1.2, wide = W / H > 1.2;
+    const S = tall ? W * 1.12 : u;                      // 글자 크기의 기준 (세로 화면은 폭 기준으로 조금 크게)
+    const color = api.clear ? '#ffffff' : (o.color || api.fg);
+    const sans = lp.face('Pretendard Variable');
+    const left = o.align === 'left';
+    const layer = document.createElement('div');
+    layer.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;color:${color};` +
+      (api.clear ? 'text-shadow:0 1px 3px rgba(0,0,0,.35),0 6px 24px rgba(0,0,0,.3);' : '');
+    api.root.appendChild(layer);
+    const pad = W * (tall ? 0.07 : 0.05) + (o.inset || 0);
+    // 위 내비 줄
+    const nav = document.createElement('div');
+    nav.style.cssText = `position:absolute;left:${pad}px;right:${pad}px;top:${S * 0.045 + (o.inset || 0)}px;height:${S * 0.06}px;display:flex;align-items:center;justify-content:space-between;`;
+    const logo = document.createElement('div');
+    logo.textContent = o.logo;
+    logo.style.cssText = `font:800 ${S * 0.026}px/1 ${lp.face('Paperlogy')};letter-spacing:.08em;white-space:nowrap;`;
+    nav.appendChild(logo);
+    if (!tall && o.menu && o.menu.length) {
+      const menu = document.createElement('div');
+      menu.style.cssText = `position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;gap:${S * 0.042}px;font:500 ${S * 0.02}px/1 ${sans};letter-spacing:-0.005em;white-space:nowrap;opacity:.72;`;
+      o.menu.forEach(m => { const s = document.createElement('span'); s.textContent = m; menu.appendChild(s); });
+      nav.appendChild(menu);
+    }
+    if (tall) {
+      const bars = document.createElement('div');
+      bars.style.cssText = `width:${S * 0.05}px;height:${S * 0.022}px;border-top:1.5px solid ${color};border-bottom:1.5px solid ${color};opacity:.85;`;
+      nav.appendChild(bars);
+    } else {
+      const pill = document.createElement('div');
+      pill.textContent = o.nav;
+      pill.style.cssText = `padding:${S * 0.011}px ${S * 0.022}px;border-radius:999px;font:600 ${S * 0.019}px/1.2 ${sans};white-space:nowrap;box-shadow:inset 0 0 0 1px ${laAlpha(color, 0.26)};background:${laAlpha(color, 0.05)};`;
+      nav.appendChild(pill);
+    }
+    layer.appendChild(nav);
+    // 가운데 글 묶음
+    const block = document.createElement('div');
+    const bw = left ? (tall ? W - pad * 2 : wide ? W * 0.56 : W - pad * 2.4) : Math.min(W - pad * 2, S * 1.5);
+    block.style.cssText = `position:absolute;top:${(o.y || 0.5) * H}px;left:${left ? pad + (tall ? 0 : W * 0.02) : (W - bw) / 2}px;width:${bw}px;transform:translateY(-50%);text-align:${left ? 'left' : 'center'};`;
+    layer.appendChild(block);
+    const parts = [];
+    if (o.label) {
+      const lab = document.createElement('div');
+      lab.style.cssText = `display:inline-flex;align-items:center;gap:${S * 0.012}px;padding:${S * 0.009}px ${S * 0.018}px;border-radius:999px;font:500 ${S * 0.018}px/1.2 ${sans};letter-spacing:.01em;white-space:nowrap;box-shadow:inset 0 0 0 1px ${laAlpha(color, 0.18)};background:${laAlpha(color, 0.04)};`;
+      const dot = document.createElement('span');
+      dot.style.cssText = `width:${S * 0.009}px;height:${S * 0.009}px;border-radius:50%;background:${o.dot || color};box-shadow:0 0 ${S * 0.012}px ${o.dot || color};`;
+      const txt = document.createElement('span');
+      txt.textContent = o.label;
+      txt.style.opacity = '.78';
+      lab.appendChild(dot);
+      lab.appendChild(txt);
+      const row = document.createElement('div');
+      row.style.cssText = `margin-bottom:${S * 0.03}px;`;
+      row.appendChild(lab);
+      block.appendChild(row);
+      parts.push([row, 0.12]);
+    }
+    const title = document.createElement('div');
+    title.style.cssText = `font:${o.weight || 700} ${S * (o.size || 0.088)}px/1.16 ${lp.face(o.face || 'Pretendard Variable')};letter-spacing:-0.032em;white-space:nowrap;`;
+    block.appendChild(title);
+    const lines = lp.split(title, o.title, 'line');
+    if (o.body) {
+      const body = document.createElement('div');
+      body.textContent = o.body;
+      body.style.cssText = `margin:${S * 0.03}px ${left ? '0' : 'auto'} 0;max-width:${S * (tall ? 0.8 : 0.6)}px;font:400 ${S * 0.023}px/1.6 ${sans};letter-spacing:-0.01em;opacity:.68;word-break:keep-all;`;
+      block.appendChild(body);
+      parts.push([body, 0.5]);
+    }
+    if (o.button) {
+      const row = document.createElement('div');
+      row.style.cssText = `margin-top:${S * 0.048}px;`;
+      const btn = document.createElement('div');
+      btn.style.cssText = `display:inline-flex;align-items:center;gap:${S * 0.012}px;padding:${S * 0.017}px ${S * 0.03}px;border-radius:999px;font:600 ${S * 0.021}px/1.2 ${sans};letter-spacing:-0.01em;white-space:nowrap;text-shadow:none;` +
+        `background:${api.clear ? '#ffffff' : (o.btn || color)};color:${api.clear ? '#111111' : (o.btnInk || api.bg)};box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 10px 30px -10px rgba(0,0,0,.45);`;
+      const word = document.createElement('span'), arrow = document.createElement('span');
+      word.textContent = o.button;
+      arrow.textContent = '→';
+      btn.appendChild(word);
+      btn.appendChild(arrow);
+      row.appendChild(btn);
+      block.appendChild(row);
+      parts.push([row, 0.64]);
+    }
+    let fin = -1;
+    return {
+      el: layer, block: block, title: title,
+      set(t) {
+        const done = t >= 2.4 ? 1 : 0;
+        if (done && fin === 1) return;
+        fin = done;
+        const tt = done ? 9 : t;
+        nav.style.opacity = lp.out(lp.seg(tt, 0.05, 0.9)).toFixed(3);
+        lines.forEach((l, i) => { const p = lp.expo(lp.seg(tt, 0.22 + i * 0.09, 1.22 + i * 0.09)); l.style.transform = `translateY(${((1 - p) * 108).toFixed(2)}%)`; });
+        parts.forEach(([el, at]) => {
+          const p = lp.expo(lp.seg(tt, at, at + 0.9));
+          el.style.opacity = p.toFixed(3);
+          el.style.transform = `translateY(${((1 - p) * S * 0.018).toFixed(2)}px)`;
+        });
+      }
+    };
+  }
+  function lpPearlSheen(api) {
+    const SHOW_TEXT = false;                                                   // 예시 제목·단추 보이기 (false면 배경만)
+    const LOGO = 'QUOKA';                                                     // 왼쪽 위 글자 로고
+    const MENU = ['연구', '수업 나눔', '자료실'];                                // 위 메뉴
+    const NAV = '시작하기';                                                    // 위 오른쪽 작은 단추
+    const LABEL = '수업 나눔';                                                  // 제목 위 작은 글
+    const TITLE = '좋은 수업은\n나눌수록 빛나요';                                   // 큰 제목 (\n 줄바꿈)
+    const BODY = '서로의 수업을 열어 보고, 함께 다듬는 선생님들의 자리예요.';             // 설명
+    const BUTTON = '수업 나눔 보기';                                             // 단추 글자
+    const LOOP = 16;                                                          // 한 바퀴 길이(초)
+    const lp = lpKit(api), W = api.W, H = api.H, u = api.u, tall = H / W > 1.2;
+    const frag = `
+  uniform vec3 uBase, uBlue, uWarm, uRose, uWhite, uInk;
+  uniform vec3 uSheen;
+  float fbm(vec3 p) { return noise3(p) * 0.55 + noise3(p * 2.1 + 3.1) * 0.3 + noise3(p * 4.3 + 7.7) * 0.15; }
+  void main() {
+    vec2 p = px();
+    float u = min(uSize.x, uSize.y);
+    vec2 q = p / u;
+    vec2 lv = loopv(0.45);
+    float f = fbm(vec3(q * 1.3 + vec2(0.0, 0.3), 0.0) + vec3(lv, 2.0));
+    float h = f * 1.6 + dot(q, vec2(0.42, 0.3)) + uT / uLoop;
+    vec3 w = 0.5 + 0.5 * cos(TAU * (h + vec3(0.0, 0.34, 0.67)));
+    w = w * w;
+    vec3 pearl = (uBlue * w.x + uWarm * w.y + uRose * w.z) / (w.x + w.y + w.z);
+    vec3 col = mix(uBase, pearl, 0.8);
+    // 진주층 같은 가는 물결 결
+    float layers = f * 22.0 + q.y * 3.0;
+    float rib = smoothstep(0.455, 0.5, abs(fract(layers) - 0.5));
+    col = mix(col, uWhite, rib * 0.13);
+    // 광택 띠 (비스듬히, 커서나 시간 따라 미끄러짐)
+    vec2 dir = normalize(vec2(1.0, -0.62));
+    float along = dot(p - uSheen.xy, dir) / u;
+    float sheen = exp(-pow(along / 0.2, 2.0)) * 0.75 + exp(-pow((along + 0.26) / 0.045, 2.0)) * 0.35;
+    col = mix(col, uWhite, sheen * uSheen.z);
+    // 아래쪽 옅은 그늘
+    col = mix(col, uInk, 0.05 * smoothstep(0.55, 1.3, p.y / uSize.y + abs(p.x / uSize.x - 0.5) * 0.4));
+    if (uClear > 0.5) { gl_FragColor = vec4(uWhite, clamp(sheen * uSheen.z * 0.6 + rib * 0.1, 0.0, 1.0)); return; }
+    col += dither() * 2.0;
+    gl_FragColor = vec4(col, 1.0);
+  }`;
+    const sh = laShader(api, frag, 0.75, LOOP);
+    sh.set('uBase', laRGB(api.bg));
+    sh.set('uBlue', laRGB(api.tone(0)));
+    sh.set('uWarm', laRGB(api.tone(1)));
+    sh.set('uRose', laRGB(api.tone(2)));
+    sh.set('uWhite', laRGB('#ffffff'));
+    sh.set('uInk', laRGB(api.ink));
+    lp.grain(api.root, 0.04);
+    const hero = SHOW_TEXT ? laHero(api, lp, { logo: LOGO, menu: MENU, nav: NAV, label: LABEL, title: TITLE, body: BODY, button: BUTTON, face: 'Hahmlet', weight: 600, size: 0.094, align: 'left', y: tall ? 0.5 : 0.53, dot: api.deep, btn: api.ink, btnInk: '#ffffff' }) : null;
+    const cursor = lp.cursor(api.root);
+    const frame = t => {
+      const tt = t % LOOP, a = Math.PI * 2 * tt / LOOP;
+      const P = api.pointer(lp.path(tt, [[9.0, 0.15, 0.82, 0], [10.6, 0.5, 0.5, 0], [12.2, 0.86, 0.2, 0], [13.2, 0.7, 0.36, 0]]));
+      // 혼자 흐르는 광택: 한 바퀴에 한 번 화면을 비스듬히 오감
+      const ax = W * (0.5 + 0.55 * Math.sin(a)), ay = H * (0.5 - 0.35 * Math.sin(a));
+      sh.set('uSheen', [lp.mix(ax, P.x, P.on), lp.mix(ay, P.y, P.on), 0.75 + 0.25 * P.on]);
+      sh.draw(tt);
+      if (hero) hero.set(t);
+      cursor.set(P);
+    };
+    frame.fonts = true;
+    frame.dispose = sh.dispose;
+    return frame;
+  }
+
+  // ③ 공통 엔진: 고칠 필요 없습니다
+  function qmEngine(root, CFG, motion) {
+    // 색 8개: 가장 밝은 색 → 가장 진한 색. [0] 흰 판·밝은 글자, [1]~[4] 연한 색에서 중간 색, [5] 포인트 색, [6] 둘째 포인트 색, [7] 글자색
+    // 바꾸려면 CONFIG에 colors: ['#...', ...] 를 같은 순서로 넣으면 됩니다. 비워 두면 흰색·네이비 계열이 쓰입니다
+    const COLORS = CFG.colors || ['#ffffff', '#e8ecf3', '#cfd7e6', '#9aa8c4', '#5c7099', '#1f3460', '#6e1a2f', '#15171c'];
+    // 매번 같은 순서가 나오는 난수 (같은 seed면 같은 결과)
+    const rand = seed => () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+    // 샘플 그림: CONFIG.images가 비어 있을 때 쓰입니다. 어느 카드에 어떤 그림이 갈지는 열 때마다 섞입니다
+    const dice = rand(CFG.seed || Math.floor(Math.random() * 1e9) + 1);
+    const shift = Math.floor(dice() * 16);
+    // 내 이미지: 칸마다 하나씩(빈 칸은 null → 그 칸은 샘플 그림). 칸보다 장면의 그림 자리가 많으면 돌아가며 씀
+    const IMGS = (CFG.images || []).slice();
+    const NIMG = IMGS.some(Boolean) ? IMGS.length : 0;
+    const used = new Set(), usedArt = new Set();     // 장면이 몇 번째 그림까지 쓰는지 (사이트가 사진 칸 수를 정할 때 읽음)
+    const FONT = '"Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif';
+    // 색의 밝기 (0 = 검정, 255 = 흰색). #rrggbb 꼴이 아니면 검정으로 봅니다
+    // 투명 배경 위에 다른 배경을 깔 때(CONFIG.under = 그 배경의 대표 색)는 그 색을 바탕으로 보고 글자색을 고릅니다
+    const light = color => color === 'transparent' && /^#[0-9a-f]{6}$/i.test(CFG.under || '') ? light(CFG.under) : /^#[0-9a-f]{6}$/i.test(color) ? (parseInt(color.slice(1, 3), 16) * 299 + parseInt(color.slice(3, 5), 16) * 587 + parseInt(color.slice(5, 7), 16) * 114) / 1000 : 0;
+    const bright = light(CFG.bg);
+    const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let frame = null, time = CFG.startAt || (still ? 4 : 0), last = 0, raf = 0, timer = 0, size = '';
+    let playing = false, seen = true, want = CFG.autoplay !== false && !still, drew = false;
+    // 랜딩페이지용: 실제 마우스·스크롤에 반응합니다 (CONFIG.live). true = 페이지에 붙여 쓸 때, 'try' = 미리보기 창(마우스가 없으면 연출대로)
+    const LIVE = CFG.live === true || CFG.live === 'try', TRY = CFG.live === 'try';
+    const live = { x: 0, y: 0, tx: 0, ty: 0, over: 0, on: false, down: 0, press: false, s: 0, ts: 0, ready: false };
+  
+    const api = {
+      root: root,
+      bg: CFG.bg,
+      clear: CFG.bg === 'transparent',              // 투명 배경으로 그리는 중 (영상 편집기에 얹을 자막 등). 이때는 화면 전체를 칠하는 바탕을 그리지 않습니다
+      fg: bright > 150 ? COLORS[7] : COLORS[0],     // 배경 위에 바로 쓰는 글자색
+      ink: COLORS[7],                               // 흰 판 위에 쓰는 글자색
+      colors: COLORS.slice(),                       // 색 8개 그대로 (배경 모션이 그라데이션 재료로 씀)
+      accent: COLORS[5],                            // 포인트 색
+      deep: COLORS[6],                              // 둘째 포인트 색
+      on: color => light(color) > 150 ? COLORS[7] : '#ffffff',   // 그 색 위에 올릴 글자색 (밝은 색 위엔 진한 글자, 진한 색 위엔 흰 글자)
+      tone: i => COLORS[1 + (i % 5 + 5) % 5],       // i번째 변주 색 (연한 색 ~ 포인트 색)
+      rand: rand,
+      font: FONT,
+      ko: text => /[\u3131-\u318e\uac00-\ud7a3]/.test(text),   // 한글이 들어 있나 (한글이 든 글줄은 한글 글꼴 하나로 씁니다)
+      count: NIMG,                                  // 넣은 이미지 칸 수 (0이면 샘플)
+      words: CFG.words || [],                       // 넣은 낱말 (글자 모션에서 사용, 비면 기본 낱말)
+      live: LIVE && !TRY,                           // 실제 페이지에서 마우스·스크롤에 반응하는 중 (미리보기 칸·영상 저장 때는 false)
+      // 발표(모션 PPT)에서 '다음 효과'를 누른 단계 { step, at }: 발표기가 채워 줌. 없으면 null (미리보기·영상은 시간표대로)
+      cue: CFG.cue || null,
+      page: CFG.page || 0,                          // 모션 PPT에서 몇 번째 장인지 (발표기가 채워 줌, 없으면 0)
+      // 마우스 자리 { x, y: 무대 안의 px, down: 누름 0~1, on: 마우스가 와 있는 정도 0~1, fake: 연출용 가짜 커서를 보일 정도 0~1 }
+      // demo: 미리보기·영상 저장 때 쓸 연출 자리 { x, y, down, on } (t로 계산해서 넘김). 실제 페이지에서는 진짜 마우스를 따라갑니다
+      pointer(demo) {
+        const d = Object.assign({ x: api.W / 2, y: api.H / 2, down: 0, on: 1 }, demo || {});
+        if (!LIVE) return { x: d.x, y: d.y, down: d.down, on: d.on, fake: 1 };
+        if (!live.ready) return TRY ? { x: d.x, y: d.y, down: d.down, on: d.on, fake: 1 } : { x: d.x, y: d.y, down: 0, on: 0, fake: 0 };
+        const k = TRY ? live.over : 1, mix = (a, b) => a + (b - a) * k;
+        return { x: mix(d.x, live.x), y: mix(d.y, live.y), down: mix(d.down, live.down), on: TRY ? mix(d.on, live.over) : live.over, fake: 1 - k };
+      },
+      // 스크롤 진행 0~1. 미리보기·영상 저장 때는 demo(t로 계산한 값), 실제 페이지에서는 이 상자(또는 CONFIG.track의 칸)가 화면을 지나는 정도
+      scroll: demo => LIVE && !TRY ? live.s : demo,
+      image: i => { used.add(i); if (!NIMG) return null; const u = IMGS[i % NIMG]; if (u) return u; const a = api.art(i, true); return a ? a.url : null; },   // i번째 이미지 주소 (없으면 null, 빈 칸이면 샘플 그림)
+      // i번째 샘플 그림 { cv, url }. 코드에 qmArt가 함께 들어 있을 때만 나옵니다 (plain: 글자 없는 그림만)
+      art: (i, plain) => { drew = true; usedArt.add(i); return typeof qmArt === 'function' ? qmArt(plain ? i : i + shift, plain) : null; },
+      // i번째 그림을 CSS background 값으로: 내 이미지가 있으면 이미지, 없으면 샘플 그림
+      paint: i => {
+        used.add(i);
+        const u = NIMG ? IMGS[i % NIMG] : null, a = u ? null : api.art(i, NIMG > 0);   // 내 사진 사이의 빈 칸은 글자 없는 샘플 사진으로
+        return u ? `url("${u}") center / cover no-repeat, #1c1c1e` : a ? `url(${a.url}) center / cover no-repeat` : `linear-gradient(145deg, ${COLORS[2]}, ${COLORS[5]})`;
+      },
+      // 숏폼 자막용 미리보기 바탕: 영상 대신 깔아 두는 흐릿한 장면 (내 이미지를 넣으면 그 그림). 투명 배경일 때는 그리지 않고 null을 돌려줍니다
+      footage(dim) {
+        if (api.clear) return null;
+        used.add(0);
+        const el = document.createElement('div'), n = IMGS[0] ? 1 : 0;
+        el.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;filter:brightness(' + (dim == null ? 0.85 : dim) + ');background:' + (n ? `url("${IMGS[0]}") center / cover no-repeat` :
+          'radial-gradient(55% 32% at 28% 26%, rgba(243,237,226,.5), rgba(243,237,226,0) 70%), radial-gradient(45% 30% at 78% 52%, rgba(154,120,110,.45), rgba(154,120,110,0) 70%), ' +
+          'radial-gradient(80% 45% at 50% 108%, rgba(31,52,96,.75), rgba(31,52,96,0) 72%), radial-gradient(40% 25% at 18% 70%, rgba(205,196,184,.28), rgba(205,196,184,0) 70%), linear-gradient(172deg, #4a4f5a, #23262d 60%, #15171c)') + ';';
+        root.appendChild(el);
+        return el;
+      },
+      // 0~1 사이 값을 부드럽게 (천천히 출발, 천천히 도착)
+      ease: x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); },
+      // 0~1 사이 값을 통통 튀게 (살짝 넘쳤다가 제자리로)
+      spring: x => { x = Math.max(0, Math.min(1, x)) - 1; return 1 + 2.70158 * x * x * x + 1.70158 * x * x; },
+      // 화면 한가운데가 (0,0,0)인 3D 공간. 숫자가 작을수록 원근감이 세집니다
+      space(perspective) {
+        root.style.perspective = perspective ? perspective + 'px' : 'none';
+        return api.group(root, 'left:50%;top:50%;');
+      },
+      // 여러 조각을 한꺼번에 돌리거나 옮길 묶음
+      group(parent, extra) {
+        const el = document.createElement('div');
+        el.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;' + (extra || '');
+        parent.appendChild(el);
+        return el;
+      },
+      // 빈 상자 하나. 상자의 중심이 (0,0)에 놓입니다 (UI 모션에서 사용)
+      box(parent, w, h, css) {
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute;left:0;top:0;box-sizing:border-box;width:${w}px;height:${h}px;margin:${-h / 2}px 0 0 ${-w / 2}px;font-family:${FONT};` + (css || '');
+        parent.appendChild(el);
+        return el;
+      },
+      // 카드 한 장. 카드의 중심이 (0,0)에 놓입니다 (카드 모션에서 사용)
+      card(parent, i, w, h, twoSided) {
+        const el = api.box(parent, w, h, 'overflow:hidden;'), s = el.style;
+        s.borderRadius = Math.min(w, h) * (CFG.radius || 0) + 'px';
+        s.backfaceVisibility = s.webkitBackfaceVisibility = twoSided ? 'visible' : 'hidden';
+        s.background = api.paint(i);
+        return el;
+      }
+    };
+  
+    function build() {
+      const W = root.clientWidth, H = root.clientHeight;
+      if (!W || !H || size === W + 'x' + H) return;
+      size = W + 'x' + H;
+      if (frame && frame.dispose) frame.dispose();   // WebGL 모션은 다시 만들기 전에 정리
+      root.textContent = '';
+      api.W = W; api.H = H; api.u = Math.min(W, H);
+      if (LIVE && !TRY) { measure(); live.s = live.ts; }
+      frame = motion(api);
+      frame(time);
+      runs(root);
+      if (watch) watch.takeRecords();   // 방금 만든 장면은 위에서 다 봤으니 쌓인 기록은 버림
+    }
+    // 한 글줄 안에 한글과 영문·숫자가 섞였는데 영문 전용 글꼴(Anton·Inter 등)이 앞에 서 있으면,
+    // 그 글줄은 글꼴 목록 뒤쪽의 한글 글꼴로 통째로 씁니다 (영문 글꼴과 한글 글꼴이 한 줄에서 따로 놀지 않게)
+    const LATIN = /^(Anton|Archivo|Instrument Serif|Inter|JetBrains Mono)$/i;
+    function runs(top) {
+      const walk = document.createTreeWalker(top, NodeFilter.SHOW_TEXT), seen = new Set();
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.parentElement) seen.add(n.parentElement);
+      seen.forEach(el => {
+        let own = '';
+        el.childNodes.forEach(c => { if (c.nodeType === 3) own += c.nodeValue; });
+        if (!/[\u3131-\u318e\uac00-\ud7a3]/.test(own) || !/[A-Za-z0-9]/.test(own)) return;
+        const list = getComputedStyle(el).fontFamily.split(',').map(f => f.trim().replace(/^["']|["']$/g, ''));
+        if (!LATIN.test(list[0])) return;
+        el.style.fontFamily = list.filter(f => !LATIN.test(f)).map(f => /^[a-z-]+$/.test(f) ? f : '"' + f + '"').join(',');
+      });
+    }
+    // 장면이 글자를 바꾸면 바뀐 곳만 다시 봅니다
+    const watch = window.MutationObserver ? new MutationObserver(list => mend(list)) : null;
+    const mend = list => list.forEach(r => { const el = r.target.nodeType === 3 ? r.target.parentElement : r.target; if (el && root.contains(el)) runs(el); });
+    if (watch) watch.observe(root, { childList: true, characterData: true, subtree: true });
+    function tick(now) {
+      raf = requestAnimationFrame(tick);
+      const dt = Math.max(0, Math.min((now - last) / 1000, 0.1));
+      time += dt * CFG.speed;                       // 흐른 시간만큼 (뒤로 가지 않게)
+      if (CFG.once && time > CFG.once) time = CFG.once;   // 한 번만: 화면에 들어오면 한 번 재생하고 이 초의 장면에서 멈춤
+      last = now;
+      if (LIVE) follow(dt);
+      if (frame) frame(time);
+    }
+    // 스크롤 진행: CONFIG.track이 있으면 그 칸(키 큰 칸 안에 이 상자를 position:sticky로 넣은 경우)을 다 내려가는 정도, 없으면 이 상자가 화면 아래에서 위로 지나가는 정도
+    function measure() {
+      const el = CFG.track ? document.querySelector(CFG.track) : root;
+      if (!el) return;
+      const r = el.getBoundingClientRect(), vh = window.innerHeight || 1;
+      live.ts = Math.max(0, Math.min(1, CFG.track ? -r.top / Math.max(1, r.height - vh) : (vh - r.top) / (vh + r.height)));
+    }
+    // 진짜 마우스·스크롤 값을 부드럽게 따라감
+    function follow(dt) {
+      const k = 1 - Math.exp(-dt * 14);
+      live.x += (live.tx - live.x) * k;
+      live.y += (live.ty - live.y) * k;
+      live.over += ((live.on ? 1 : 0) - live.over) * (1 - Math.exp(-dt * 6));
+      live.down += ((live.press ? 1 : 0) - live.down) * (1 - Math.exp(-dt * 18));
+      if (!TRY) { measure(); live.s += (live.ts - live.s) * (1 - Math.exp(-dt * 10)); }
+    }
+    const spot = e => {
+      const r = root.getBoundingClientRect();
+      live.tx = (e.clientX - r.left) * root.clientWidth / (r.width || 1);
+      live.ty = (e.clientY - r.top) * root.clientHeight / (r.height || 1);
+      if (!live.ready) { live.x = live.tx; live.y = live.ty; live.ready = true; }
+    };
+    // 멈춰 있을 때(일시 정지·동작 줄이기 설정)도 마우스에는 바로 반응
+    const poke = () => { if (playing || !frame) return; live.x = live.tx; live.y = live.ty; live.over = live.on ? 1 : 0; live.down = live.press ? 1 : 0; frame(time); };
+    const hands = {
+      pointerenter: e => { spot(e); live.on = true; poke(); },
+      pointermove: e => { spot(e); live.on = true; poke(); },
+      pointerleave: () => { live.on = false; live.press = false; poke(); },
+      pointerdown: e => { spot(e); live.on = live.press = true; poke(); },
+      pointerup: () => { live.press = false; poke(); }
+    };
+    if (LIVE) Object.keys(hands).forEach(k => root.addEventListener(k, hands[k]));
+    // 화면에 보일 때만 움직입니다
+    function sync() {
+      const on = want && seen;
+      if (on && !playing) { playing = true; last = performance.now(); raf = requestAnimationFrame(tick); }
+      if (!on && playing) { playing = false; cancelAnimationFrame(raf); }
+    }
+  
+    Object.assign(root.style, { position: 'relative', overflow: 'hidden', background: CFG.bg, aspectRatio: CFG.ratio });
+    build();
+    const ro = new ResizeObserver(() => { clearTimeout(timer); timer = setTimeout(build, 100); });
+    const io = new IntersectionObserver(e => { seen = e[e.length - 1].isIntersecting; sync(); });
+    // 웹폰트로 그리는 모션은 폰트가 도착하면 크기를 다시 재서 그립니다
+    const refit = () => { if (frame && (frame.fonts || drew)) { size = ''; build(); } };
+    if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', refit);
+    ro.observe(root);
+    io.observe(root);
+    sync();
+  
+    return {
+      play() { want = true; sync(); },
+      pause() { want = false; sync(); },
+      restart() { time = 0; if (frame) frame(time); },
+      seek(t) { time = t; if (frame) frame(time); if (watch) mend(watch.takeRecords()); },   // t초의 장면으로 건너뜀 (영상으로 한 장씩 찍을 때)
+      now() { return time; },                       // 지금 몇 초의 장면인지 (발표기에서 씀)
+      motion() { return frame; },                   // 모션이 돌려준 장면 함수 (frame.steps 같은 정보를 읽을 때)
+      slots() { return used.size || usedArt.size; },   // 이 장면이 쓰는 그림 칸 수 (사이트의 '내 사진' 칸)
+      destroy() { want = false; sync(); if (LIVE) Object.keys(hands).forEach(k => root.removeEventListener(k, hands[k])); ro.disconnect(); io.disconnect(); if (watch) watch.disconnect(); clearTimeout(timer); if (document.fonts && document.fonts.removeEventListener) document.fonts.removeEventListener('loadingdone', refit); if (frame && frame.dispose) frame.dispose(); root.textContent = ''; }
+    };
+  }
+
+  qmEngine(document.getElementById('qm-lp-pearl-sheen'), CONFIG, lpPearlSheen);
+})();
+</script>
+</body>
+</html>
